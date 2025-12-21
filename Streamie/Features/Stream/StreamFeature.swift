@@ -20,7 +20,6 @@ struct StreamFeature: Reducer {
     enum Action: Equatable {
         case onAppear
         case onDisappear
-        case startTapped
         case stopTapped
         case streamStatusChanged(StreamStatus)
     }
@@ -38,7 +37,12 @@ struct StreamFeature: Reducer {
             case .onAppear:
                 state.status = .idle
                 state.error = nil
-                return observeStreamStatus()
+
+                return .merge(
+                    startStream(configuration: state.configuration),
+                    observeStreamStatus()
+                )
+
             case .onDisappear:
                 return .run { _ in
                     await streamClient.stop()
@@ -46,16 +50,10 @@ struct StreamFeature: Reducer {
 
             // MARK: - User intent
 
-            case .startTapped:  
-                guard state.status == .idle else { return .none }
-                state.error = nil
-
-                return .run { [config = state.configuration] _ in
-                    try await streamClient.start(config)
-                }
-
             case .stopTapped:
-                guard state.status == .live else { return .none }
+                guard state.status == .live || state.status == .connecting else {
+                    return .none
+                }
 
                 return .run { _ in
                     await streamClient.stop()
@@ -77,12 +75,16 @@ struct StreamFeature: Reducer {
 
     // MARK: - Effects
 
+    private func startStream(configuration: StreamConfiguration) -> Effect<Action> {
+        .run { _ in
+            try await streamClient.start(configuration)
+        }
+    }
+
     private func observeStreamStatus() -> Effect<Action> {
         .run { send in
             for await status in streamClient.statuses() {
-                await MainActor.run {
-                    send(.streamStatusChanged(status))
-                }
+                await send(.streamStatusChanged(status))
             }
         }
     }

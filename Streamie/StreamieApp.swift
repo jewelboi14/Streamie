@@ -10,15 +10,17 @@ import ComposableArchitecture
 
 @main
 struct StreamieApp: App {
-    
+
+    let store = Store(
+        initialState: AppFeature.State(),
+        reducer: {
+            AppFeature()
+        }
+    )
+
     var body: some Scene {
         WindowGroup {
-            AppView(
-                store: Store(
-                    initialState: AppFeature.State(),
-                    reducer: AppFeature()
-                )
-            )
+            AppView(store: store)
         }
     }
 }
