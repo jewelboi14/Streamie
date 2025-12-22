@@ -60,6 +60,11 @@ struct KeychainClientLive: KeychainClient {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key
         ]
-        SecItemDelete(query as CFDictionary)
+        let status = SecItemDelete(query as CFDictionary)
+
+        // errSecItemNotFound is acceptable - item may not exist
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw KeychainError.unexpectedStatus(status)
+        }
     }
 }

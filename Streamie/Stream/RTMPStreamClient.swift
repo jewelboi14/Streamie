@@ -115,9 +115,51 @@ final class RTMPStreamClient: StreamClient {
     private func startPreviewIfNeeded() {
         guard !isPreviewRunning else { return }
 
+        Task {
+            await requestPermissionsAndAttachDevices()
+        }
+    }
+
+    private func requestPermissionsAndAttachDevices() async {
+        // Request camera permission
+        let cameraStatus = AVCaptureDevice.authorizationStatus(for: .video)
+        switch cameraStatus {
+        case .notDetermined:
+            let granted = await AVCaptureDevice.requestAccess(for: .video)
+            if !granted {
+                receive(.permissionDenied(.camera))
+                return
+            }
+        case .denied, .restricted:
+            receive(.permissionDenied(.camera))
+            return
+        case .authorized:
+            break
+        @unknown default:
+            break
+        }
+
+        // Request microphone permission
+        let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+        switch micStatus {
+        case .notDetermined:
+            let granted = await AVCaptureDevice.requestAccess(for: .audio)
+            if !granted {
+                receive(.permissionDenied(.microphone))
+                return
+            }
+        case .denied, .restricted:
+            receive(.permissionDenied(.microphone))
+            return
+        case .authorized:
+            break
+        @unknown default:
+            break
+        }
+
+        // Both permissions granted, attach devices
         attachCamera(position: currentCameraPosition)
         attachMicrophone()
-
         isPreviewRunning = true
     }
 }
@@ -308,7 +350,7 @@ private extension RTMPStreamClient {
             receive(.publishStopped)
 
         default:
-            break
+            print("[RTMPStreamClient] Unhandled RTMP code: \(code)")
         }
     }
 }
@@ -342,8 +384,11 @@ private extension RTMPStreamClient {
         case (_, .microphoneUnavailable):
             update(.failed(.microphoneUnavailable))
 
+        case (_, .permissionDenied(let permission)):
+            update(.failed(.permissionsDenied(permission)))
+
         default:
-            break
+            print("[RTMPStreamClient] Unhandled event: \(event) in state: \(state)")
         }
     }
 

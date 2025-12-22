@@ -14,10 +14,24 @@ struct ConfigurationFeature: Reducer {
     struct State: Equatable {
         var streamURL: String = ""
         var streamKey: String = ""
+        var error: ConfigurationError?
 
         var isValid: Bool {
-            !streamURL.isEmpty && !streamKey.isEmpty
+            !streamURL.isEmpty && !streamKey.isEmpty && isValidRTMPURL
         }
+
+        var isValidRTMPURL: Bool {
+            guard !streamURL.isEmpty else { return true }
+            return streamURL.lowercased().hasPrefix("rtmp://") ||
+                   streamURL.lowercased().hasPrefix("rtmps://")
+        }
+    }
+
+    // MARK: - Error
+    enum ConfigurationError: Error, Equatable {
+        case invalidURL
+        case keychainLoadFailed
+        case keychainSaveFailed
     }
 
     // MARK: - Action
@@ -28,6 +42,7 @@ struct ConfigurationFeature: Reducer {
         case streamKeyChanged(String)
         case continueTapped
 
+        case errorAlertDismissed
         case delegate(Delegate)
     }
 
@@ -48,13 +63,18 @@ struct ConfigurationFeature: Reducer {
                 state.streamURL =
                     userDefaults.string(forKey: StreamStorageKeys.streamURL) ?? ""
 
-                state.streamKey =
-                    (try? keychain.load(StreamStorageKeys.streamKey)) ?? ""
+                do {
+                    state.streamKey = try keychain.load(StreamStorageKeys.streamKey) ?? ""
+                } catch {
+                    print("[ConfigurationFeature] Failed to load stream key: \(error)")
+                    state.error = .keychainLoadFailed
+                }
 
                 return .none
 
             case let .streamURLChanged(value):
                 state.streamURL = value
+                state.error = nil
                 return .none
 
             case let .streamKeyChanged(value):
@@ -62,17 +82,30 @@ struct ConfigurationFeature: Reducer {
                 return .none
 
             case .continueTapped:
-                guard state.isValid else { return .none }
+                guard !state.streamURL.isEmpty, !state.streamKey.isEmpty else {
+                    return .none
+                }
+
+                guard state.isValidRTMPURL else {
+                    state.error = .invalidURL
+                    return .none
+                }
 
                 userDefaults.set(
                     state.streamURL,
                     forKey: StreamStorageKeys.streamURL
                 )
 
-                try? keychain.save(
-                    state.streamKey,
-                    for: StreamStorageKeys.streamKey
-                )
+                do {
+                    try keychain.save(
+                        state.streamKey,
+                        for: StreamStorageKeys.streamKey
+                    )
+                } catch {
+                    print("[ConfigurationFeature] Failed to save stream key: \(error)")
+                    state.error = .keychainSaveFailed
+                    return .none
+                }
 
                 let config = StreamConfiguration(
                     url: state.streamURL,
@@ -80,6 +113,10 @@ struct ConfigurationFeature: Reducer {
                 )
 
                 return .send(.delegate(.didFinish(config)))
+
+            case .errorAlertDismissed:
+                state.error = nil
+                return .none
 
             case .delegate:
                 return .none
