@@ -8,8 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		87387F452EF6DEA800C33206 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 87387F442EF6DEA800C33206 /* ComposableArchitecture */; };
-		87A9DA022EF733AF00BD35BE /* HaishinKit in Frameworks */ = {isa = PBXBuildFile; productRef = 87A9DA012EF733AF00BD35BE /* HaishinKit */; };
-		87A9DA042EF733AF00BD35BE /* SRTHaishinKit in Frameworks */ = {isa = PBXBuildFile; productRef = 87A9DA032EF733AF00BD35BE /* SRTHaishinKit */; };
+		876DE9912EF86EB900CEBC57 /* HaishinKit in Frameworks */ = {isa = PBXBuildFile; productRef = 876DE9902EF86EB900CEBC57 /* HaishinKit */; };
+		876DE9932EF86EB900CEBC57 /* SRTHaishinKit in Frameworks */ = {isa = PBXBuildFile; productRef = 876DE9922EF86EB900CEBC57 /* SRTHaishinKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,9 +29,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				87A9DA022EF733AF00BD35BE /* HaishinKit in Frameworks */,
+				876DE9912EF86EB900CEBC57 /* HaishinKit in Frameworks */,
 				87387F452EF6DEA800C33206 /* ComposableArchitecture in Frameworks */,
-				87A9DA042EF733AF00BD35BE /* SRTHaishinKit in Frameworks */,
+				876DE9932EF86EB900CEBC57 /* SRTHaishinKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -75,8 +75,8 @@
 			name = Streamie;
 			packageProductDependencies = (
 				87387F442EF6DEA800C33206 /* ComposableArchitecture */,
-				87A9DA012EF733AF00BD35BE /* HaishinKit */,
-				87A9DA032EF733AF00BD35BE /* SRTHaishinKit */,
+				876DE9902EF86EB900CEBC57 /* HaishinKit */,
+				876DE9922EF86EB900CEBC57 /* SRTHaishinKit */,
 			);
 			productName = Streamie;
 			productReference = 87D7E3D42EF6D4BA00282E06 /* Streamie.app */;
@@ -108,7 +108,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				87387F432EF6DEA800C33206 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
-				87A9DA002EF733AF00BD35BE /* XCRemoteSwiftPackageReference "HaishinKit" */,
+				876DE98F2EF86EB900CEBC57 /* XCRemoteSwiftPackageReference "HaishinKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 87D7E3D52EF6D4BA00282E06 /* Products */;
@@ -271,6 +271,8 @@
 				DEVELOPMENT_TEAM = CJGZR6N7SF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to broadcast live video streams.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses the microphone to broadcast live audio during streams.\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -301,6 +303,8 @@
 				DEVELOPMENT_TEAM = CJGZR6N7SF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to broadcast live video streams.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses the microphone to broadcast live audio during streams.\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -352,12 +356,12 @@
 				minimumVersion = 1.23.1;
 			};
 		};
-		87A9DA002EF733AF00BD35BE /* XCRemoteSwiftPackageReference "HaishinKit" */ = {
+		876DE98F2EF86EB900CEBC57 /* XCRemoteSwiftPackageReference "HaishinKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/HaishinKit/HaishinKit.swift";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.6.5;
+				kind = exactVersion;
+				version = 1.9.5;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -368,14 +372,14 @@
 			package = 87387F432EF6DEA800C33206 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
 		};
-		87A9DA012EF733AF00BD35BE /* HaishinKit */ = {
+		876DE9902EF86EB900CEBC57 /* HaishinKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 87A9DA002EF733AF00BD35BE /* XCRemoteSwiftPackageReference "HaishinKit" */;
+			package = 876DE98F2EF86EB900CEBC57 /* XCRemoteSwiftPackageReference "HaishinKit" */;
 			productName = HaishinKit;
 		};
-		87A9DA032EF733AF00BD35BE /* SRTHaishinKit */ = {
+		876DE9922EF86EB900CEBC57 /* SRTHaishinKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 87A9DA002EF733AF00BD35BE /* XCRemoteSwiftPackageReference "HaishinKit" */;
+			package = 876DE98F2EF86EB900CEBC57 /* XCRemoteSwiftPackageReference "HaishinKit" */;
 			productName = SRTHaishinKit;
 		};
 /* End XCSwiftPackageProductDependency section */

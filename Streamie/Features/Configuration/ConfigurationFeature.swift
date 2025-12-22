@@ -11,8 +11,8 @@ struct ConfigurationFeature: Reducer {
     
     // MARK: - State
     struct State: Equatable {
-        var streamURL: String = ""
-        var streamKey: String = ""
+        var streamURL: String = "rtmp://live.twitch.tv/app"
+        var streamKey: String = "live_1409804756_lCSDiiDXvFZo9xxnVIj4jtyeJdrILE"
         
         var isValid: Bool {
             !streamURL.isEmpty && !streamKey.isEmpty

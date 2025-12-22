@@ -42,12 +42,10 @@ struct ConfigurationView: View {
                     .textFieldStyle(.roundedBorder)
                 }
                 
-                Button("Start stream") {
+                Button("Continue") {
                     viewStore.send(.continueTapped)
                 }
                 .buttonStyle(.borderedProminent)
-                
-                Spacer()
             }
             .padding()
         }

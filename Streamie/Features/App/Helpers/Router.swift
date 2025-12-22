@@ -19,6 +19,7 @@ struct Router: Reducer {
         case configuration(ConfigurationFeature.State)
         case stream(StreamFeature.State)
         // future:
+        // case streamChat
         // case effects(EffectsFeature.State)
         // case onboarding(OnboardingFeature.State)
     }

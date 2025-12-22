@@ -13,18 +13,8 @@ struct AppView: View {
 
     let store: StoreOf<AppFeature>
 
-    // NOTE (Routing / TCA):
-    //
-    // `SwitchStore` is intentionally combined with an explicit `switch state`.
-    // This guarantees that exactly one `CaseLet` is rendered at any given time.
-    //
-    // Without this explicit switch, SwiftUI may keep a previous `CaseLet`
-    // alive for one render pass after an enum state transition, which causes
-    // TCA to emit a runtime diagnostic warning.
-    //
-    // This pattern is the recommended production approach for enum-based routing
-    // in TCA and fully avoids transient `CaseLet` mismatch warnings while keeping
-    // reducer scoping explicit and type-safe.
+    @Dependency(\.streamPreview) private var makeStreamPreview
+
     var body: some View {
         SwitchStore(
             store.scope(
@@ -34,7 +24,6 @@ struct AppView: View {
         ) { state in
 
             switch state {
-
             case .configuration:
                 CaseLet(
                     /Router.State.configuration,
@@ -45,12 +34,15 @@ struct AppView: View {
             case .stream:
                 CaseLet(
                     /Router.State.stream,
-                    action: Router.Action.stream,
-                    then: StreamView.init
-                )
+                    action: Router.Action.stream
+                ) { streamStore in
+
+                    StreamView(
+                        store: streamStore,
+                        preview: makeStreamPreview()
+                    )
+                }
             }
         }
     }
 }
-
-
