@@ -48,6 +48,9 @@ struct ConfigurationView: View {
                 .buttonStyle(.borderedProminent)
             }
             .padding()
+            .onAppear {
+                viewStore.send(.onAppear)
+            }
         }
     }
 }

@@ -20,8 +20,8 @@ struct Router: Reducer {
         case stream(StreamFeature.State)
         // future:
         // case streamChat
-        // case effects(EffectsFeature.State)
-        // case onboarding(OnboardingFeature.State)
+        // case effects
+        // case onboarding
     }
 
     // MARK: - Action (navigation actions)
@@ -42,26 +42,34 @@ struct Router: Reducer {
         ) {
             ConfigurationFeature()
         }
-
+        
         Scope(
             state: \.stream,
             action: \.stream
         ) {
             StreamFeature()
         }
-
+        
         Reduce { state, action in
             switch action {
-
+                
+                // Configuration → Stream
             case let .configuration(.delegate(.didFinish(config))):
                 state = .stream(
                     StreamFeature.State(configuration: config)
                 )
                 return .none
-
+                
+                // Stream → Configuration
+            case .stream(.delegate(.backToConfiguration)):
+                state = .configuration(
+                    ConfigurationFeature.State()
+                )
+                return .none
+                
             case .configuration:
                 return .none
-
+                
             case .stream:
                 return .none
             }

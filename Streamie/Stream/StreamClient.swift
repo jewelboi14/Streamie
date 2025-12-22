@@ -12,7 +12,7 @@ import SwiftUI
 // MARK: - Domain protocol (used by Reducers)
 
 protocol StreamClient {
-    func start(_ configuration: StreamConfiguration) async throws
+    func start(_ configuration: StreamConfiguration) async
     func stop() async
     func attachPreview(_ view: MTHKView)
     func setCameraPosition(_ position: CameraPosition) async

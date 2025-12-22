@@ -51,7 +51,6 @@ struct StreamView: View {
                 StreamInfoSheetView(store: store)
             }
             .onAppear { viewStore.send(.onAppear) }
-            .onDisappear { viewStore.send(.onDisappear) }
         }
     }
     

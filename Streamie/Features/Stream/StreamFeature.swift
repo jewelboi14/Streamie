@@ -35,7 +35,6 @@ struct StreamFeature: Reducer {
 
     enum Action: Equatable {
         case onAppear
-        case onDisappear
 
         case startStopTapped
         case setFrontCamera(Bool)
@@ -59,6 +58,13 @@ struct StreamFeature: Reducer {
         case backToConfiguration
     }
 
+    // MARK: - Cancel IDs
+
+    private enum CancelID {
+        case timer
+        case streamStatus
+    }
+
     // MARK: - Dependencies
 
     @Dependency(\.streamClient) var streamClient
@@ -70,6 +76,8 @@ struct StreamFeature: Reducer {
         Reduce { state, action in
             switch action {
 
+            // MARK: Lifecycle
+
             case .onAppear:
                 state.error = nil
                 return .merge(
@@ -77,10 +85,7 @@ struct StreamFeature: Reducer {
                     startTimer()
                 )
 
-            case .onDisappear:
-                return .run { _ in
-                    await streamClient.stop()
-                }
+            // MARK: Stream control
 
             case .startStopTapped:
                 switch state.status {
@@ -90,33 +95,35 @@ struct StreamFeature: Reducer {
                     return startStream(configuration: state.configuration)
 
                 case .connecting, .live:
-                    return .run { _ in
-                        await streamClient.stop()
-                    }
+                    return stopStream()
                 }
+
+            // MARK: Stream updates
 
             case let .streamStatusChanged(status):
                 state.status = status
 
-                if case let .live(metrics) = status {
+                switch status {
+                case let .live(metrics):
                     state.videoBitrate = metrics?.videoBitrate
                     state.audioBitrate = metrics?.audioBitrate
-
+                    
                     if state.startedAt == nil {
                         state.startedAt = Date()
                     }
-                }
-
-                if case let .failed(error) = status {
+                case let .failed(error):
                     state.error = error
+                default:
+                    return .none
                 }
-
                 return .none
             case .tick:
                 if let startedAt = state.startedAt {
                     state.duration = Date().timeIntervalSince(startedAt)
                 }
                 return .none
+
+            // MARK: Controls
 
             case let .setFrontCamera(isFront):
                 state.isFrontCamera = isFront
@@ -138,6 +145,8 @@ struct StreamFeature: Reducer {
                     await streamClient.setCameraEnabled(isOn)
                 }
 
+            // MARK: UI
+
             case .infoButtonTapped:
                 state.isInfoSheetPresented = true
                 return .none
@@ -151,8 +160,11 @@ struct StreamFeature: Reducer {
                 return .none
 
             case .backButtonTapped:
-                return .send(.delegate(.backToConfiguration))
-
+                return .merge(
+                    stopStream(),
+                    stopObservingStreamStatus(),
+                    .send(.delegate(.backToConfiguration))
+                )
             case .delegate:
                 return .none
             }
@@ -163,14 +175,17 @@ struct StreamFeature: Reducer {
 
     private func startStream(configuration: StreamConfiguration) -> Effect<Action> {
         .run { send in
-            do {
-                try await streamClient.start(configuration)
-            } catch let error as StreamingError {
-                await send(.streamStatusChanged(.failed(error)))
-            } catch {
-                await send(.streamStatusChanged(.failed(.unknown)))
-            }
+            await streamClient.start(configuration)
         }
+    }
+
+    private func stopStream() -> Effect<Action> {
+        .merge(
+            stopTimer(),
+            .run { _ in
+                await streamClient.stop()
+            }
+        )
     }
 
     private func observeStreamStatus() -> Effect<Action> {
@@ -179,6 +194,11 @@ struct StreamFeature: Reducer {
                 await send(.streamStatusChanged(status))
             }
         }
+        .cancellable(id: CancelID.streamStatus)
+    }
+
+    private func stopObservingStreamStatus() -> Effect<Action> {
+        .cancel(id: CancelID.streamStatus)
     }
 
     private func startTimer() -> Effect<Action> {
@@ -187,5 +207,10 @@ struct StreamFeature: Reducer {
                 await send(.tick)
             }
         }
+        .cancellable(id: CancelID.timer)
+    }
+
+    private func stopTimer() -> Effect<Action> {
+        .cancel(id: CancelID.timer)
     }
 }
