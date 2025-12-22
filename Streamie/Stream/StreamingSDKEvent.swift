@@ -15,6 +15,8 @@ enum StreamingSDKEvent: Equatable {
     case publishStarted
     case publishStopped
     case publishRejected
+
     case cameraUnavailable
     case microphoneUnavailable
+    case permissionDenied(Permission)
 }
