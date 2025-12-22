@@ -16,7 +16,11 @@ final class RTMPStreamClient: StreamClient {
     private let stream: RTMPStream
 
     private var currentCameraPosition: CameraPosition = .front
+    
     private var isMicrophoneEnabled: Bool = true
+    private var isCameraEnabled: Bool = true
+    
+    private var metricsTask: Task<Void, Never>?
 
     private var isPreviewRunning: Bool = false
     private var isStreaming: Bool = false
@@ -60,6 +64,8 @@ final class RTMPStreamClient: StreamClient {
         guard isStreaming else { return }
 
         isStreaming = false
+        
+        stopMetricsTask()
 
         update(.stopped)
 
@@ -73,34 +79,26 @@ final class RTMPStreamClient: StreamClient {
     }
 
     func setMicrophoneEnabled(_ enabled: Bool) async {
-        guard isMicrophoneEnabled != enabled else { return }
+        stream.audioMixerSettings.isMuted = !enabled
         isMicrophoneEnabled = enabled
-
-        if enabled {
-            attachMicrophone()
-        } else {
-            stream.attachAudio(nil)
-        }
     }
-
+    
     func setCameraEnabled(_ enabled: Bool) async {
-        if enabled {
-            attachCamera(position: currentCameraPosition)
-        } else {
-            stream.attachCamera(nil)
-        }
+        stream.videoMixerSettings.isMuted = !enabled
+        isCameraEnabled = enabled
+        
     }
-
+    
     nonisolated func statuses() -> AsyncStream<StreamStatus> {
         statusStream
     }
-
+    
     // MARK: - Camera preview (UI-side)
-
+    
     func attachPreview(_ view: MTHKView) {
         view.videoGravity = .resizeAspectFill
         view.attachStream(stream)
-
+        
         startPreviewIfNeeded()
     }
 
@@ -108,9 +106,7 @@ final class RTMPStreamClient: StreamClient {
         guard !isPreviewRunning else { return }
 
         attachCamera(position: currentCameraPosition)
-        if isMicrophoneEnabled {
-            attachMicrophone()
-        }
+        attachMicrophone()
 
         isPreviewRunning = true
     }
@@ -142,7 +138,7 @@ private extension RTMPStreamClient {
     func attachCamera(position: CameraPosition) {
         let devicePosition: AVCaptureDevice.Position =
             position == .front ? .front : .back
-
+        
         guard let camera = AVCaptureDevice.default(
             .builtInWideAngleCamera,
             for: .video,
@@ -151,8 +147,13 @@ private extension RTMPStreamClient {
             receive(.cameraUnavailable)
             return
         }
-
-        stream.attachCamera(camera)
+        
+        stream.attachCamera(camera) { unit, _ in
+            unit?.isVideoMirrored = position == .front
+        }
+        Task {
+            await setCameraEnabled(isCameraEnabled)
+        }
     }
 
     func attachMicrophone() {
@@ -160,9 +161,38 @@ private extension RTMPStreamClient {
             receive(.microphoneUnavailable)
             return
         }
-
         stream.attachAudio(microphone)
+        
+        Task {
+            await setMicrophoneEnabled(isMicrophoneEnabled)
+        }
     }
+    
+    private func startMetricsTask() {
+        metricsTask?.cancel()
+
+        metricsTask = Task { [weak self] in
+            guard let self else { return }
+
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard case .live = self.state else { continue }
+
+                let metrics = StreamMetrics(
+                    videoBitrate: self.stream.videoSettings.bitRate,
+                    audioBitrate: self.stream.audioSettings.bitRate
+                )
+
+                self.continuation.yield(.live(metrics))
+            }
+        }
+    }
+
+    private func stopMetricsTask() {
+        metricsTask?.cancel()
+        metricsTask = nil
+    }
+    
 }
 
 // MARK: - RTMP events
@@ -229,11 +259,12 @@ private extension RTMPStreamClient {
             update(.connecting)
 
         case (.connecting, .publishStarted):
-            update(.live)
-
+            update(.live(nil))
+            
         case (.live, .connectionClosed):
             update(.stopped)
-
+            stopMetricsTask()
+            
         case (.connecting, .connectionFailed):
             update(.failed(.rtmpConnectionFailed))
 
@@ -253,6 +284,15 @@ private extension RTMPStreamClient {
 
     func update(_ newState: StreamStatus) {
         guard state != newState else { return }
+
+        if state.isLive && !newState.isLive {
+            stopMetricsTask()
+        }
+
+        if !state.isLive && newState.isLive {
+            startMetricsTask()
+        }
+
         state = newState
         continuation.yield(newState)
     }

@@ -22,7 +22,7 @@ struct StreamInfoSheetView: View {
                             value: statusTitle(for: viewStore.status)
                         )
                         
-                        if viewStore.status == .live {
+                        if case .live = viewStore.status {
                             infoRow(
                                 title: "Broadcast time",
                                 value: timeString(from: viewStore.duration)
@@ -54,15 +54,6 @@ struct StreamInfoSheetView: View {
                             title: "Microphone",
                             value: viewStore.isMicOn ? "Enabled" : "Muted"
                         )
-                    }
-                    
-                    if let reconnects = viewStore.reconnectCount {
-                        Section(header: Text("Diagnostics")) {
-                            infoRow(
-                                title: "Reconnect attempts",
-                                value: "\(reconnects)"
-                            )
-                        }
                     }
                 }
                 .navigationTitle("Stream Info")

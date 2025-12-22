@@ -9,10 +9,10 @@ import SwiftUI
 import ComposableArchitecture
 
 struct StreamView: View {
-
+    
     let store: StoreOf<StreamFeature>
     let preview: CameraPreviewView
-
+    
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             ZStack {
@@ -20,10 +20,27 @@ struct StreamView: View {
                 preview
                     .ignoresSafeArea()
 
+                if !viewStore.isCameraOn {
+                    videoPlaceholder()
+                }
+
                 VStack {
+                    topBar(viewStore)
                     Spacer()
                     bottomPanel(viewStore)
                 }
+            }
+            .alert(
+                isPresented: viewStore.binding(
+                    get: { $0.error != nil },
+                    send: .errorAlertDismissed
+                )
+            ) {
+                Alert(
+                    title: Text("Streaming error"),
+                    message: Text(viewStore.error?.message ?? "Unknown error"),
+                    dismissButton: .default(Text("OK"))
+                )
             }
             .sheet(
                 isPresented: viewStore.binding(
@@ -37,76 +54,121 @@ struct StreamView: View {
             .onDisappear { viewStore.send(.onDisappear) }
         }
     }
-
+    
+    // MARK: - Top Bar
+    
+    private func topBar(
+        _ viewStore: ViewStore<StreamFeature.State, StreamFeature.Action>
+    ) -> some View {
+        HStack(spacing: 12) {
+            
+            if !viewStore.status.isLiveOrConnecting {
+                circleButton(systemName: "chevron.left") {
+                    viewStore.send(.backButtonTapped)
+                }
+            }
+            
+            Spacer()
+            
+            streamStatus(viewStore.status)
+            
+            circleButton(systemName: "info.circle") {
+                viewStore.send(.infoButtonTapped)
+            }
+        }
+        .padding()
+    }
+    
+    // MARK: - Bottom Panel
+    
     private func bottomPanel(
         _ viewStore: ViewStore<StreamFeature.State, StreamFeature.Action>
     ) -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
+            
             startStopButton(viewStore)
-            HStack(spacing: 16) {
-
-                Button {
+            
+            HStack(spacing: 20) {
+                
+                circleButton(
+                    systemName: viewStore.isMicOn ? "mic.fill" : "mic.slash.fill"
+                ) {
                     viewStore.send(.toggleMic)
-                } label: {
-                    Image(systemName: viewStore.isMicOn ? "mic.fill" : "mic.slash.fill")
                 }
                 
-                Button {
+                circleButton(systemName: "arrow.triangle.2.circlepath.camera") {
                     viewStore.send(.setFrontCamera(!viewStore.isFrontCamera))
-                } label: {
-                    Image(systemName: "arrow.triangle.2.circlepath.camera")
-                }
-
-                Button {
-                    viewStore.send(.toggleCamera)
-                } label: {
-                    Image(systemName: viewStore.isCameraOn ? "video.fill" : "video.slash.fill")
                 }
                 
-                Spacer()
-
-                Text(statusTitle(for: viewStore.status))
-                    .font(.footnote)
-                    .foregroundColor(viewStore.status == .live ? .red : .secondary)
-
-                Button {
-                    viewStore.send(.infoButtonTapped)
-                } label: {
-                    Image(systemName: "info.circle")
+                circleButton(
+                    systemName: viewStore.isCameraOn ? "video.fill" : "video.slash.fill"
+                ) {
+                    viewStore.send(.toggleCamera)
                 }
             }
-            .padding()
-            .background(.ultraThinMaterial)
+            .padding(.bottom, 20)
         }
+        .padding(.horizontal)
     }
+    
+    // MARK: - Start / Stop Button
     
     private func startStopButton(
         _ viewStore: ViewStore<StreamFeature.State, StreamFeature.Action>
     ) -> some View {
-
-        let isLiveOrConnecting =
-            viewStore.status == .live || viewStore.status == .connecting
-
+        
+        let isLiveOrConnecting = viewStore.status.isLiveOrConnecting
+        
         return Button {
             viewStore.send(.startStopTapped)
         } label: {
             Text(isLiveOrConnecting ? "Stop stream" : "Start stream")
-                .fontWeight(.semibold)
+                .font(.headline)
                 .foregroundColor(.white)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
                 .background(isLiveOrConnecting ? Color.red : Color.green)
-                .cornerRadius(10)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
         }
     }
-
-    private func statusTitle(for status: StreamStatus) -> String {
-        switch status {
-        case .idle: return "Idle"
-        case .connecting: return "Connecting"
-        case .live: return "LIVE"
-        case .stopped: return "Stopped"
-        case .failed: return "Failed"
+    
+    // MARK: - Components
+    
+    private func circleButton(
+        systemName: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 52, height: 52)
+                .background(.ultraThinMaterial)
+                .clipShape(Circle())
         }
     }
+    
+    private func streamStatus(_ status: StreamStatus) -> some View {
+        Text(status.title)
+            .font(.footnote.weight(.semibold))
+            .foregroundColor(status.isLive ? .red : .secondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.ultraThinMaterial)
+            .clipShape(Capsule())
+    }
+    
+    private func videoPlaceholder() -> some View {
+        ZStack {
+            Color(.systemGray5)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 16) {
+                Image(systemName: "video.slash.fill")
+                    .font(.system(size: 64, weight: .semibold))
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+    
 }
