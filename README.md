@@ -25,8 +25,8 @@ The architecture emphasizes modularity by separating app features, streaming log
 | Platform            | iOS |
 | Language            | Swift |
 | UI Framework        | SwiftUI |
-| Architecture        | Feature-based / MVVM-like (assumed) |
-| Streaming Protocol  | RTMP (assumed from `RTMPStreamClient`) |
+| Architecture        | TCA |
+| Streaming Protocol  | RTMP |
 | Secure Storage      | Keychain |
 | Persistence         | UserDefaults |
 | Tooling             | Xcode |
