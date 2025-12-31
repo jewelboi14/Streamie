@@ -92,15 +92,13 @@ Streamie
 
 ## Environment / Configuration ⚙️
 
-The app likely requires:
+The app requires:
 - RTMP server URL
 - Stream key or credentials
 
 These values appear to be:
 - Stored securely via **Keychain**
 - Persisted via **UserDefaults** for non-sensitive data
-
-> No `.env` or explicit configuration files were found.
 
 ---
 
@@ -124,10 +122,3 @@ Contributions are welcome!
 4. Open a pull request
 
 Please follow Swift and SwiftUI best practices.
-
----
-
-## License 📄
-
-License information is **not specified**.  
-Consider adding a `LICENSE` file to clarify usage and distribution terms.
