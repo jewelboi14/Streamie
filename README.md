@@ -57,8 +57,6 @@ The architecture emphasizes modularity by separating app features, streaming log
 3. Select a valid iOS device or simulator.
 4. Build and run the project.
 
-> iOS version requirement is **not specified** and should be verified in Xcode project settings.
-
 ---
 
 ## Usage ▶️
@@ -68,8 +66,6 @@ The architecture emphasizes modularity by separating app features, streaming log
 3. Preview the camera feed.
 4. Start the live stream.
 5. Monitor stream status and errors.
-
-> Exact UI flow is inferred from `StreamFeature`, `StreamView`, and configuration-related files.
 
 ---
 
